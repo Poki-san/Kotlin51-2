@@ -13,14 +13,11 @@ suspend fun main() {
         coroutineScope{
             val channelLine = getList(Storage().text)
             val channelChar = modifiedList(channelLine)
+            channelChar.consumeEach {stringResult +=it}
+
             val channelWord = getListWord(Storage().text)
             val channelWordChar = modifiedList(channelWord)
-            channelChar.consumeEach {
-                stringResult +=it
-            }
-            channelWordChar.consumeEach {
-                wordResult +=it
-            }
+            channelWordChar.consumeEach {wordResult +=it}
         }
     }
     println(time)
@@ -54,6 +51,14 @@ class Storage {
         """.trimIndent()
 }
 
+fun CoroutineScope.modifiedList(channel: ReceiveChannel<String>): ReceiveChannel<String> = produce {
+    channel.consumeEach {
+        if (it.isNotBlank()) {
+            send(it[0].uppercase())
+        }
+    }
+}
+
 suspend fun CoroutineScope.getListWord(text: String) : ReceiveChannel<String> = produce {
     text.split(Regex("[ ,.,!,\n,-]")).forEach {
         delay(10L)
@@ -68,12 +73,4 @@ suspend fun CoroutineScope.getList(text: String) : ReceiveChannel<String> = prod
         send(it)
     }
     close()
-}
-
-fun CoroutineScope.modifiedList(channel: ReceiveChannel<String>): ReceiveChannel<String> = produce {
-    channel.consumeEach {
-        if (it.isNotBlank()) {
-            send(it[0].uppercase())
-        }
-    }
 }
